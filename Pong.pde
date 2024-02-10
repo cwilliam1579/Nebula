@@ -1,105 +1,98 @@
-int ballX, ballY, ballSpeedX = 5, ballSpeedY = 3;
-int paddleWidth = 10, paddleHeight = 80;
-int paddle1Y, paddle2Y;
-int paddleSpeed = 5;
-
-boolean wKey, sKey, upKey, downKey;
+int numParticles = 10000;
+Particle[] particles;
 
 void setup() {
-  size(600, 400);
-  reset();
+  frameRate(144);
+  size(1900, 900, P3D);
+  particles = new Particle[numParticles];
+  for (int i = 0; i < numParticles; i++) {
+    particles[i] = new Particle(random(width), random(height), random(200), random(TWO_PI), random(1, 3));
+  }
 }
 
 void draw() {
   background(0);
-  
-  // Draw paddles
-  fill(255);
-  rect(10, paddle1Y, paddleWidth, paddleHeight);
-  rect(width - paddleWidth - 10, paddle2Y, paddleWidth, paddleHeight);
-  
-  // Draw ball
-  fill(255);
-  ellipse(ballX, ballY, 20, 20);
-  
-  // Move paddles
-  movePaddle();
-  
-  // Move ball
-  ballX += ballSpeedX;
-  ballY += ballSpeedY;
-  
-  // Check collision with walls
-  if (ballY < 0 || ballY > height) {
-    ballSpeedY *= -1;
-  }
-  
-  // Check collision with paddles
-  if (ballX <= 20 && ballY >= paddle1Y && ballY <= paddle1Y + paddleHeight) {
-    ballSpeedX *= -1;
-  }
-  
-  if (ballX >= width - 20 - paddleWidth && ballY >= paddle2Y && ballY <= paddle2Y + paddleHeight) {
-    ballSpeedX *= -1;
-  }
-  
-  // Check if ball is out of bounds
-  if (ballX < 0 || ballX > width) {
-    reset();
-  }
-}
 
-void movePaddle() {
-  // Move paddle 1 with keys 'W' and 'S'
-  if (wKey && paddle1Y > 0) {
-    paddle1Y -= paddleSpeed;
-  } 
-  if (sKey && paddle1Y < height - paddleHeight) {
-    paddle1Y += paddleSpeed;
-  }
-  
-  // Move paddle 2 with arrow keys
-  if (upKey && paddle2Y > 0) {
-    paddle2Y -= paddleSpeed;
-  } 
-  if (downKey && paddle2Y < height - paddleHeight) {
-    paddle2Y += paddleSpeed;
+  for (Particle particle : particles) {
+    particle.update();
+    particle.display();
   }
 }
 
 void keyPressed() {
-  if (key == 'w') {
-    wKey = true;
-  } else if (key == 's') {
-    sKey = true;
-  }
-  
-  if (keyCode == UP) {
-    upKey = true;
-  } else if (keyCode == DOWN) {
-    downKey = true;
+  // Reset particles if space key is pressed
+  if (key == ' ') {
+    for (Particle particle : particles) {
+      particle.reset();
+    }
   }
 }
 
-void keyReleased() {
-  if (key == 'w') {
-    wKey = false;
-  } else if (key == 's') {
-    sKey = false;
-  }
-  
-  if (keyCode == UP) {
-    upKey = false;
-  } else if (keyCode == DOWN) {
-    downKey = false;
+void mousePressed() {
+  // Add a repulsive force from the mouse when clicked
+  for (Particle particle : particles) {
+    float distance = dist(mouseX, mouseY, particle.x, particle.y);
+    if (distance < 100) { // Adjust the radius of influence as needed
+      float forceStrength = map(distance, 0, 100, 1, 0); // Inverse relationship
+      float forceX = (particle.x - mouseX) * forceStrength;
+      float forceY = (particle.y - mouseY) * forceStrength;
+      particle.applyForce(forceX, forceY);
+    }
   }
 }
 
-void reset() {
-  ballX = width / 2;
-  ballY = height / 2;
-  paddle1Y = height / 2 - paddleHeight / 2;
-  paddle2Y = height / 2 - paddleHeight / 2;
-  ballSpeedX *= random(1) > 0.5 ? 1 : -1;
-  ballSpeedY *= random(1) > 0.5 ? 1 : -1;
+class Particle {
+  float x, y, z;
+  float angle;
+  float speed;
+  float radius;
+  float xForce, yForce;
+
+  Particle(float x, float y, float z, float angle, float speed) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+    this.angle = angle;
+    this.speed = speed;
+    this.radius = random(2, 5);
+    this.xForce = 0;
+    this.yForce = 0;
+  }
+
+  void update() {
+    float noiseValue = noise(x * 0.005, y * 0.005, frameCount * 0.005) * 10;
+    float r = radius + noiseValue;
+
+    x += cos(angle) * speed + xForce;
+    y += sin(angle) * speed + yForce;
+    z += noiseValue;
+
+    if (x < 0 || x > width || y < 0 || y > height) {
+      reset();
+    }
+
+    angle += noise(x * 0.01, y * 0.01, frameCount * 0.01) - 0.5;
+  }
+
+  void display() {
+    float col1 = map(z, 0, 200, 50, 100);
+    float col2 = map(z, 0, 200, 0, 50);
+    float col3 = map(z, 0, 200, 100, 200);
+    fill(col1, col2, col3, 150);
+    noStroke();
+    ellipse(x, y, radius * 2, radius * 2);
+  }
+
+  void applyForce(float forceX, float forceY) {
+    xForce += forceX;
+    yForce += forceY;
+  }
+
+  void reset() {
+    x = width / 2;
+    y = height / 2;
+    z = random(200);
+    xForce = 0;
+    yForce = 0;
+  }
 }
