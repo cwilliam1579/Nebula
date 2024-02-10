@@ -1,4 +1,4 @@
-int numParticles = 10000;
+int numParticles = 1000;
 Particle[] particles;
 
 void setup() {
@@ -29,7 +29,6 @@ void keyPressed() {
 }
 
 void mousePressed() {
-  // Add a repulsive force from the mouse when clicked
   for (Particle particle : particles) {
     float distance = dist(mouseX, mouseY, particle.x, particle.y);
     if (distance < 100) { // Adjust the radius of influence as needed
