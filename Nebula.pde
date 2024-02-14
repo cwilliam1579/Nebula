@@ -31,7 +31,7 @@ void keyPressed() {
 void mousePressed() {
   for (Particle particle : particles) {
     float distance = dist(mouseX, mouseY, particle.x, particle.y);
-    if (distance < 100) { // Adjust the radius of influence as needed
+    if (distance < 100) { // Adjust the radius of influence 
       float forceStrength = map(distance, 0, 100, 1, 0); // Inverse relationship
       float forceX = (particle.x - mouseX) * forceStrength;
       float forceY = (particle.y - mouseY) * forceStrength;
